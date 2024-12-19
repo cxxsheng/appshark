@@ -1,18 +1,18 @@
 {
   //apk to anlayze
-  "apkPath": "/Users/aaa/Downloads/app.apk",
+  "apkPath": "/Users/cxxsheng/MismatchAttackChainFinder/MismatchTest/app/build/outputs/apk/debug/app-debug.apk",
 
   //result output directory
   //  "out": "out",
 
   //specifies the rules, default is all *.json files in the $rulePath directory
-  //  "rules": "unZipSlip.json",
+    "rules": "IntentRedirectionPlusVersion.json",
 
   //specifies the rule's parent directory, default is ./config/rules
   //  "rulePath": "config/rules",
 
   //print more info about this rule
-  //  "debugRule": "unZipSlip",
+    "debugRule": "IntentRedirectionPlusVersion",
 
   //output log level
   //  "logLevel": 0,

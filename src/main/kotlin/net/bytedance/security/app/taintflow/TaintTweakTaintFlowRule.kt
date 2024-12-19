@@ -17,6 +17,7 @@
 
 package net.bytedance.security.app.taintflow
 
+import net.bytedance.security.app.MethodFinder
 import net.bytedance.security.app.TaintTweakData
 import net.bytedance.security.app.engineconfig.VariableFlowConfig
 import soot.SootMethod
@@ -38,7 +39,16 @@ class TaintTweakTaintFlowRule(tw: TaintTweakData, private val defaultTaintFlowRu
         }
 
         tw.MethodSignature?.mapValues { VariableFlowConfig.parseListRule(it.value).toFlowItem() }?.let {
-            this.methodRule += it
+           // Support wildcard matching patterns
+            val methodMap = mutableMapOf<String, List<FlowItem>>()
+            it.forEach { (key, value) ->
+                MethodFinder.checkAndParseMethodSig(key).let { methods ->
+                    methods.forEach{ method ->
+                        methodMap[method.signature] = value
+                    }
+                }
+            }
+            this.methodRule += methodMap
         }
 
     }

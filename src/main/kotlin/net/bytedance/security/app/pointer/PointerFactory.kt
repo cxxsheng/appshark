@@ -26,6 +26,7 @@ import soot.*
 class PointerFactory {
     var ptrIndexMap: MutableMap<String, PLPointer> = HashMap()
     var objIndexMap: MutableMap<String, PLObject> = HashMap()
+    val objectToField: MutableMap<PLObject, MutableSet<PLPtrObjectField>> = HashMap();
 
     /**
      * get or create a PLObject.
@@ -124,6 +125,15 @@ class PointerFactory {
         }
         val ptr = PLPtrObjectField(obj, fieldName, fieldType, sootField, ptrSig)
         ptrIndexMap[ptrSig] = ptr
+
+        var fieldSet = objectToField[obj]
+        if (fieldSet == null){
+            fieldSet = HashSet()
+            objectToField[obj] = fieldSet
+        }
+        if (!fieldSet.contains(ptr)){
+            fieldSet.add(ptr)
+        }
         return ptr
     }
 

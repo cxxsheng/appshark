@@ -1,0 +1,92 @@
+{
+  "IntentRedirectionPlusVersion": {
+    "enable": true,
+    "DirectMode": true,
+    "traceDepth": 6,
+    "desc": {
+      "name": "IntentRedirectionPlusVersion",
+      "category": "IntentRedirection",
+      "detail": "Intent redirection, but a plus version",
+      "wiki": "",
+      "possibility": "2",
+      "model": "high"
+    },
+    "entry": {
+      "ExportedCompos": true
+    },
+    "source": {
+      "Return": [
+        "<android.app.Activity: android.content.Intent getIntent()>"
+      ]
+    },
+    "TaintTweak": {
+      "MethodSignature": {
+        "<android.content.Intent: void <init>(*)>": {
+          "params->@this": {
+            "I": [
+              "p*"
+            ],
+            "O": [
+              "@this"
+            ]
+          }
+        },
+        "<android.content.Intent: void put*(*)>": {
+          "params->@this.data": {
+            "I": [
+              "p*"
+            ],
+            "O": [
+              "@this.data"
+            ]
+          }
+        },
+        "<android.content.Intent: * get*(*)>": {
+          "@this.data->ret": {
+            "I": [
+              "@this.data"
+            ],
+            "O": [
+              "ret"
+            ]
+          }
+        },
+        "<android.content.Intent: * create*(*)>": {
+          "@this.data->ret": {
+            "I": [
+              "@this.data"
+            ],
+            "O": [
+              "ret"
+            ]
+          }
+        },
+        "<android.content.Intent: * set*(*)>": {
+          "params->@this": {
+            "I": [
+              "p*"
+            ],
+            "O": [
+              "@this"
+            ]
+          }
+        }
+      },
+      "MethodName": {
+        "putCharSequenceArrayListExtra": {}
+      }
+    },
+    "sink": {
+      "<*: * startActivit*(*)>": {
+        "LibraryOnly": true,
+        "TaintParamType": [
+          "android.content.Intent",
+          "android.content.Intent[]"
+        ],
+        "TaintCheck": [
+          "p*"
+        ]
+      }
+    }
+  }
+}

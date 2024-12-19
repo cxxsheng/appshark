@@ -23,6 +23,7 @@ import net.bytedance.security.app.PreAnalyzeContext
 import net.bytedance.security.app.getConfig
 import net.bytedance.security.app.pointer.PLLocalPointer
 import net.bytedance.security.app.pointer.PLPointer
+import net.bytedance.security.app.pointer.PLPtrObjectField
 import net.bytedance.security.app.result.OutputSecResults
 import net.bytedance.security.app.ruleprocessor.ConstModeProcessor
 import net.bytedance.security.app.rules.ConstNumberModeRule
@@ -31,6 +32,7 @@ import net.bytedance.security.app.rules.TaintFlowRule
 import net.bytedance.security.app.sanitizer.SanitizeContext
 import net.bytedance.security.app.sanitizer.SanitizerFactory
 import net.bytedance.security.app.taintflow.AnalyzeContext
+import net.bytedance.security.app.taintflow.AnalyzeContext.Companion.isPrimePtr
 import net.bytedance.security.app.taintflow.TaintAnalyzer
 import net.bytedance.security.app.taintflow.TwoStagePointerAnalyze
 import net.bytedance.security.app.ui.TaintPathModeHtmlWriter
@@ -292,7 +294,19 @@ class TaintPathFinder(
 //            exitProcess(3)
         }
         val g = analyzeContext.variableFlowGraph
-        val path = bfsSearch(srcPtr, sinkPtrSet, g, getConfig().maxPathLength, rule.name) ?: return
+
+        val fields =  analyzeContext.findObjectFieldsByPointer(srcPtr)
+        for (field in fields) {
+            var sets = g[srcPtr]
+            if (sets == null) {
+                sets = HashSet()
+                g[srcPtr] = sets
+            }
+            if (!sets.contains(field))
+                sets.add(field)
+        }
+
+        val path = bfsSearch(srcPtr, sinkPtrSet, g, getConfig().maxPathLength, rule.name, rule.primTypeAsTaint) ?: return
         val result = PathResult(path)
         try {
             TaintPathModeHtmlWriter(OutputSecResults, analyzer, result, rule).addVulnerabilityAndSaveResultToOutput()
@@ -317,7 +331,7 @@ class TaintPathFinder(
 
 
     companion object {
-        data class PointerAndDepth(val p: PLPointer, val depth: Int)
+        data class PointerAndDepth(val p: PLPointer, val depth: Int, val withData: Boolean = false)
 
         /**
          * breath first search for the shortest path
@@ -326,6 +340,7 @@ class TaintPathFinder(
          * @param g graph
          * @param maxPath the maximum size of the shortest path
          * @param name for log
+         * @param isIncludePrimeTaint whether prime type should be considered in the Taint
          * @return the shortest path from src to dst or null if no path found
          */
         fun bfsSearch(
@@ -334,6 +349,7 @@ class TaintPathFinder(
             g: Map<PLPointer, Set<PLPointer>>,
             maxPath: Int,
             name: String,
+            isIncludePrimeTaint: Boolean = true,
         ): List<PLPointer>? {
             val parents = HashMap<PLPointer, PLPointer>()
             val queue = LinkedList<PointerAndDepth>()
@@ -357,6 +373,10 @@ class TaintPathFinder(
                     if (visited.contains(n)) {
                         continue
                     }
+
+                    if(!isIncludePrimeTaint && isPrimePtr(n))
+                        continue
+
                     visited.add(n)
                     parents[n] = src.p
                     queue.addLast(PointerAndDepth(n, src.depth + 1))

@@ -17,9 +17,7 @@
 
 package net.bytedance.security.app.taintflow
 
-import net.bytedance.security.app.pointer.PLObject
-import net.bytedance.security.app.pointer.PLPointer
-import net.bytedance.security.app.pointer.PointerFactory
+import net.bytedance.security.app.pointer.*
 import net.bytedance.security.app.util.toFormatedString
 import net.bytedance.security.app.util.toSortedMap
 import soot.PrimType
@@ -283,6 +281,19 @@ class AnalyzeContext(val pt: PointerFactory) {
             }
         }
         return result
+    }
+
+
+    fun findObjectFieldsByPointer(obj: PLPointer): Set<PLPtrObjectField> {
+        val objs = pointerToObjectSet[obj] ?: return emptySet()
+        val resultSet = mutableSetOf<PLPtrObjectField>()
+
+        for (objItem in objs) {
+            pt.objectToField[objItem]?.let { fields ->
+                resultSet += fields // 将字段集合添加到结果集合中
+            }
+        }
+        return resultSet // 返回结果集合
     }
 
     companion object {

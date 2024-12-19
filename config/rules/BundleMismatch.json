@@ -1,0 +1,36 @@
+{
+  "BundleMismatch": {
+    "enable": true,
+    "DirectMode": true,
+    "traceDepth": 6,
+    "desc": {
+      "name": "BundleMismatch",
+      "category": "BundleMismatch",
+      "detail": "BundleMismatch",
+      "wiki": "",
+      "possibility": "2",
+      "model": "high"
+    },
+    "entry": {
+      "ExportedCompos": true
+    },
+    "source": {
+      "Return": [
+        "<android.content.Intent: android.os.Parcelable getParcelable*(java.lang.String)>",
+        "<android.os.Bundle: android.os.Parcelable getParcelable*(java.lang.String)>"
+      ]
+    },
+    "sink": {
+      "<*: * startActivit*(*)>": {
+        "LibraryOnly": true,
+        "TaintParamType": [
+          "android.content.Intent",
+          "android.content.Intent[]"
+        ],
+        "TaintCheck": [
+          "p*"
+        ]
+      }
+    }
+  }
+}
