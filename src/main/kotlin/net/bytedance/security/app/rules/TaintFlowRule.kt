@@ -34,6 +34,8 @@ abstract class TaintFlowRule(name: String, ruleData: RuleData) : AbstractRule(na
 
     val traceDepth: Int
 
+    val PreciseTaint: Boolean
+
     init {
         sink = ruleData.sink ?: emptyMap()
         sanitize = ruleData.sanitize
@@ -42,6 +44,7 @@ abstract class TaintFlowRule(name: String, ruleData: RuleData) : AbstractRule(na
         primTypeAsTaint = ruleData.PrimTypeAsTaint == true
         taintTweak = ruleData.TaintTweak
         traceDepth = ruleData.traceDepth!!
+        PreciseTaint = ruleData.PreciseTaint == true
     }
 
     fun isThisRuleNeedLog(): Boolean {

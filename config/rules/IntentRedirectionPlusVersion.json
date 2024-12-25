@@ -3,6 +3,7 @@
     "enable": true,
     "DirectMode": true,
     "traceDepth": 6,
+    "PreciseTaint": true,
     "desc": {
       "name": "IntentRedirectionPlusVersion",
       "category": "IntentRedirection",
@@ -12,7 +13,7 @@
       "model": "high"
     },
     "entry": {
-      "ExportedCompos": true
+      "AllCompos": true
     },
     "source": {
       "Return": [

@@ -295,17 +295,20 @@ class TaintPathFinder(
         }
         val g = analyzeContext.variableFlowGraph
 
-        val fields =  analyzeContext.findObjectFieldsByPointer(srcPtr)
-        for (field in fields) {
-            var sets = g[srcPtr]
-            if (sets == null) {
-                sets = HashSet()
-                g[srcPtr] = sets
+        // 对于src应该指向的不仅仅是@this，还应该指向@this.data
+        // fixme 是否需要做类型检查呢吗 用于针对intent的测试
+        if (rule.PreciseTaint) {
+            val fields = analyzeContext.findObjectFieldsByPointer(srcPtr)
+            for (field in fields) {
+                var sets = g[srcPtr]
+                if (sets == null) {
+                    sets = HashSet()
+                    g[srcPtr] = sets
+                }
+                if (!sets.contains(field))
+                    sets.add(field)
             }
-            if (!sets.contains(field))
-                sets.add(field)
         }
-
         val path = bfsSearch(srcPtr, sinkPtrSet, g, getConfig().maxPathLength, rule.name, rule.primTypeAsTaint) ?: return
         val result = PathResult(path)
         try {
@@ -331,7 +334,7 @@ class TaintPathFinder(
 
 
     companion object {
-        data class PointerAndDepth(val p: PLPointer, val depth: Int, val withData: Boolean = false)
+        data class PointerAndDepth(val p: PLPointer, val depth: Int)
 
         /**
          * breath first search for the shortest path

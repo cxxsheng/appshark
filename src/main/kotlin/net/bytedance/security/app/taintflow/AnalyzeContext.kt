@@ -290,10 +290,10 @@ class AnalyzeContext(val pt: PointerFactory) {
 
         for (objItem in objs) {
             pt.objectToField[objItem]?.let { fields ->
-                resultSet += fields // 将字段集合添加到结果集合中
+                resultSet += fields
             }
         }
-        return resultSet // 返回结果集合
+        return resultSet
     }
 
     companion object {

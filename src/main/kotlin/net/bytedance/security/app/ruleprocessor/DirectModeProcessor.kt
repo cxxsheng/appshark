@@ -95,6 +95,22 @@ open class DirectModeProcessor(ctx: PreAnalyzeContext) : TaintFlowRuleProcessor(
                 }
             }
         }
+
+        if (entry.AllCompos == true) {
+            for (exportCompo in AndroidUtils.exportComponents) {
+                if (AndroidUtils.compoEntryMap.containsKey(exportCompo)) {
+                    val sootMethod = AndroidUtils.compoEntryMap[exportCompo]
+                    entries.add(sootMethod!!)
+                }
+            }
+            for (unExportComponents in AndroidUtils.unExportComponents) {
+                if (AndroidUtils.compoEntryMap.containsKey(unExportComponents)) {
+                    val sootMethod = AndroidUtils.compoEntryMap[unExportComponents]
+                    entries.add(sootMethod!!)
+                }
+            }
+        }
+
         if (entry.UseJSInterface == true) {
             jsInterfaceAsEntry(entries)
         }
