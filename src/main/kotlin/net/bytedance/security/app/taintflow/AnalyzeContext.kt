@@ -47,7 +47,7 @@ class AnalyzeContext(val pt: PointerFactory) {
     /**
      * As with the variableFlowGraph, key is the propagation destination and value is the propagation source
      */
-    private val reverseVariableFlowGraph: MutableMap<PLPointer, MutableSet<PLPointer>> = HashMap()
+    val reverseVariableFlowGraph: MutableMap<PLPointer, MutableSet<PLPointer>> = HashMap()
 
     /**
      *  $r0 = <net.bytedance.security.app.bvaa.openConnection.A$innerA: net.bytedance.security.app.bvaa.openConnection.A ina>;

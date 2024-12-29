@@ -22,6 +22,7 @@ import net.bytedance.security.app.util.profiler
 import soot.SootField
 import soot.SootMethod
 import soot.Type
+import soot.jimple.ClassConstant
 import soot.jimple.Constant
 
 /**
@@ -68,6 +69,9 @@ class PLLocalPointer : PLPointer {
     val isConstStr: Boolean
         get() = variable.startsWith(PLUtils.CONST_STR)
 
+    val isConst: Boolean
+        get() = constant != null
+
     val isThis: Boolean
         get() = variable == PLUtils.THIS_FIELD
     val isLocal: Boolean
@@ -87,6 +91,19 @@ class PLLocalPointer : PLPointer {
 
     override fun toString(): String {
         return this.signature()
+    }
+
+    fun constBeautifulString(): String? {
+        if (isConst) {
+            when (constant) {
+                is ClassConstant -> {
+                    return convertDescriptorToPath((constant as ClassConstant).value.toString())
+                }
+
+
+            }
+        }
+        return null
     }
 
     override fun equals(other: Any?): Boolean {
@@ -114,6 +131,16 @@ class PLLocalPointer : PLPointer {
             }
             return getLocalLongSignature(method, localName)
         }
+
+        fun convertDescriptorToPath(descriptor: String): String {
+            // 检查是否符合 Lpackage/classname; 格式
+            if (descriptor.startsWith("L") && descriptor.endsWith(";")) {
+                // 去掉首尾的 "L" 和 ";"
+                return descriptor.substring(1, descriptor.length - 1).replace('/','.')
+            }
+            // 如果格式不符合，直接返回原始字符串
+            return descriptor
+        }
     }
 }
 
@@ -137,3 +164,4 @@ fun Type.shortName(): String {
     }
     return this.toString()
 }
+

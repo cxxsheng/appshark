@@ -30,6 +30,12 @@
 <com.cxxsheng.MainActivity$$ExternalSyntheticLambda0: void <init>()>
 <com.cxxsheng.MainActivity: void <init>()>
 <com.cxxsheng.MainActivity: void onCreate(android.os.Bundle)>
+<com.cxxsheng.TargetActivity$$ExternalSyntheticLambda0: void <init>()>
+<com.cxxsheng.TargetActivity: void <init>()>
+<com.cxxsheng.TargetActivity: void onCreate(android.os.Bundle)>
+<com.cxxsheng.TramplineActivity$$ExternalSyntheticLambda0: void <init>()>
+<com.cxxsheng.TramplineActivity: void <init>()>
+<com.cxxsheng.TramplineActivity: void onCreate(android.os.Bundle)>
 <java.lang.Class: java.lang.String getName()>
 <java.lang.Object: void <init>()>
 

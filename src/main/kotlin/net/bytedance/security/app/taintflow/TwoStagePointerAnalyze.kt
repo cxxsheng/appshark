@@ -20,7 +20,9 @@ package net.bytedance.security.app.taintflow
 import kotlinx.coroutines.*
 import net.bytedance.security.app.Log
 import net.bytedance.security.app.PLUtils
+import net.bytedance.security.app.android.AndroidUtils
 import net.bytedance.security.app.engineconfig.isLibraryClass
+import net.bytedance.security.app.pathfinder.variableName
 import net.bytedance.security.app.pointer.PLLocalPointer
 import net.bytedance.security.app.pointer.PLObject
 import net.bytedance.security.app.pointer.PLPointer
@@ -87,7 +89,7 @@ class TwoStagePointerAnalyze(
         try {
             val job = localScope.launch(Dispatchers.Default + CoroutineName("PointerAnalyzeStage1") + oomHandler) {
                 scope = this
-                analyzeMethod(entryMethod, null, 0)
+                analyzeMethod(entryMethod, null, 0, null)
             }
             runInMilliSeconds(job, analyzeTimeInMilliSeconds, "$name-step1") {}
         } catch (ex: Exception) {
@@ -119,7 +121,7 @@ class TwoStagePointerAnalyze(
      *  r0=a.f() a.r1->a.@return a.r2->a.@return   a.@return ->caller.r0
      */
     private suspend fun analyzeMethod(
-        sootMethod: SootMethod, recvPtr: PLLocalPointer?, curTraceDepth: Int
+        sootMethod: SootMethod, recvPtr: PLLocalPointer?, curTraceDepth: Int, isCalledComponent: PLLocalPointer?
     ): Boolean {
         if (curTraceDepth > traceDepth) {
             return true
@@ -135,24 +137,24 @@ class TwoStagePointerAnalyze(
             if (!canContinueAnalyze()) {
                 return false
             }
-            analyzeStmtInterProcedure(stmt, sootMethod, recvPtr, line, curTraceDepth + 1)
+            analyzeStmtInterProcedure(stmt, sootMethod, recvPtr, line, curTraceDepth + 1, isCalledComponent)
         }
         return false
     }
 
 
     private suspend fun analyzeStmtInterProcedure(
-        stmt: Stmt, method: SootMethod, recvPtr: PLLocalPointer?, line: Int, curTraceDepth: Int
+        stmt: Stmt, method: SootMethod, recvPtr: PLLocalPointer?, line: Int, curTraceDepth: Int, isCalledComponent: PLLocalPointer?
     ) {
         if (stmt is JInvokeStmt) {
             val invokeExpr = stmt.getInvokeExpr()
             val callSite = createCallSite(method, line)
             if (invokeExpr is JStaticInvokeExpr || invokeExpr is JDynamicInvokeExpr) {
                 staticInvoke(
-                    stmt, method, callSite, null, invokeExpr as AbstractInvokeExpr, line, curTraceDepth
+                    stmt, method, callSite, null, invokeExpr as AbstractInvokeExpr, line, curTraceDepth, isCalledComponent
                 )
             } else if (invokeExpr is InstanceInvokeExpr) {
-                val basePtr = instanceInvoke(stmt, method, callSite, null, invokeExpr, line, curTraceDepth)
+                val basePtr = instanceInvoke(stmt, method, callSite, null, invokeExpr, line, curTraceDepth, isCalledComponent)
                 basePtr?.let { addToFixPointAlgoCache(it, method, stmt) }
             }
         } else if (stmt is JIdentityStmt) {
@@ -166,7 +168,7 @@ class TwoStagePointerAnalyze(
                     val localCallRecv = leftExpr as JimpleLocal
                     val localRecvPtr = pt.allocLocal(method, localCallRecv.name, localCallRecv.type)
                     staticInvoke(
-                        stmt, method, callSite, localRecvPtr, rightExpr, line, curTraceDepth
+                        stmt, method, callSite, localRecvPtr, rightExpr, line, curTraceDepth, isCalledComponent
                     )
                 }
 
@@ -175,7 +177,7 @@ class TwoStagePointerAnalyze(
                     val localCallRecv = leftExpr as JimpleLocal
                     val localRecvPtr = pt.allocLocal(method, localCallRecv.name, localCallRecv.type)
                     staticInvoke(
-                        stmt, method, callSite, localRecvPtr, rightExpr, line, curTraceDepth
+                        stmt, method, callSite, localRecvPtr, rightExpr, line, curTraceDepth, isCalledComponent
                     )
                 }
 
@@ -183,7 +185,20 @@ class TwoStagePointerAnalyze(
                     val callSite = createCallSite(method, line)
                     val recvOp = leftExpr as JimpleLocal
                     val localRecvPtr = pt.allocLocal(method, recvOp.name, recvOp.type)
-                    val basePtr = instanceInvoke(stmt, method, callSite, localRecvPtr, rightExpr, line, curTraceDepth)
+
+
+                    // 如果是isCalledComponent，代表的是被调用的组件，面对getIntent需要增加一些边的问题
+                    if (isCalledComponent != null){
+                        if (rightExpr.method.subSignature == "android.content.Intent getIntent()"){
+                            // a = getIntent()
+                            // b = startActivity -> param0
+                            // a = b
+                            ctx.addPtrEdge(isCalledComponent, localRecvPtr)
+                        }
+                    }
+
+                    val basePtr =
+                        instanceInvoke(stmt, method, callSite, localRecvPtr, rightExpr, line, curTraceDepth, isCalledComponent)
                     basePtr?.let { addToFixPointAlgoCache(it, method, stmt) }
                 }
 
@@ -301,7 +316,8 @@ class TwoStagePointerAnalyze(
         recvPtr: PLLocalPointer?,
         invokeExpr: AbstractInvokeExpr,
         line: Int,
-        curTraceDepth: Int
+        curTraceDepth: Int,
+        isCalledComponent: PLLocalPointer?
     ) {
         if (!canContinueAnalyze()) {
             return
@@ -318,7 +334,7 @@ class TwoStagePointerAnalyze(
                     patchedMethods.add(callee)
                     patchMethod(stmt, caller, callee, null, recvPtr, line)
                 } else {
-                    val isReachedMax = analyzeMethod(callee, recvPtr, curTraceDepth)
+                    val isReachedMax = analyzeMethod(callee, recvPtr, curTraceDepth, isCalledComponent)
                     if (isReachedMax) {
                         removeRM(callee)
                     }
@@ -340,7 +356,36 @@ class TwoStagePointerAnalyze(
         }
     }
 
-    /**
+
+    val ICC_METHODS = listOf("void startActivity(android.content.Intent)")
+
+    //找到所有的terminal node，用于检测是否存在常量
+    fun findAllTerminalNodesDFS(
+        graph: MutableMap<PLPointer, MutableSet<PLPointer>>,
+        startNode: PLPointer
+    ): Set<PLPointer> {
+        val visited = mutableSetOf<PLPointer>()
+        val terminalNodes = mutableSetOf<PLPointer>()
+
+        fun dfs(node: PLPointer) {
+            if (node in visited) return
+            visited.add(node)
+
+            val neighbors = graph[node]
+            if (neighbors.isNullOrEmpty()) {
+                terminalNodes.add(node)
+            } else {
+                neighbors.forEach { neighbor ->
+                    dfs(neighbor)
+                }
+            }
+        }
+
+        dfs(startNode)
+        return terminalNodes
+    }
+
+        /**
      *   ret=obj.f(arg1,arg2)
      *  @param stmt ret=obj.f(arg1,arg2)
      *  @param caller the method that contains the [stmt]
@@ -357,11 +402,24 @@ class TwoStagePointerAnalyze(
         recvPtr: PLLocalPointer?,
         invokeExpr: InstanceInvokeExpr,
         line: Int,
-        curTraceDepth: Int
+        curTraceDepth: Int,
+        isCalledComponent: PLLocalPointer?
     ): PLLocalPointer? {
         if (!canContinueAnalyze()) {
             return null
         }
+
+        // 如果是isCalledComponent，代表的是被调用的组件，面对getIntent需要增加一些边的问题
+        if (isCalledComponent != null){
+
+            System.out.println("didi" + caller.toString())
+
+            if (invokeExpr.method.subSignature.contains("getIntent")){
+                System.out.println(invokeExpr)
+            }
+
+        }
+
         val mode = methodAnalyzeMode.methodMode(invokeExpr.method)
         if (mode == MethodAnalyzeMode.Skip) {
             return null
@@ -414,10 +472,57 @@ class TwoStagePointerAnalyze(
         if (typeObjs.isEmpty()) {
             typeObjs2 = makeNewObj(baseType, invokeExpr, basePtr)
         }
+
+        if (invokeExpr.method.subSignature in ICC_METHODS){
+            var local:PLLocalPointer? = null
+            val possibleStrings: MutableSet<String> = mutableSetOf()
+            for (arg in invokeExpr.args){
+                if (arg.type.toString() == "android.content.Intent") {
+                    // 获取name，用来遍历所有的source
+                    local = pt.allocLocal(caller, arg.variableName(), arg.type)
+                    val allPtr = findAllTerminalNodesDFS(this.ctx.reverseVariableFlowGraph, local)
+                    for(ptr in allPtr){
+                        // 这里还有可能是个obj，我只考虑了LocalPointer
+                        if (ptr is PLLocalPointer){
+                            if (ptr.isConst)
+                            {
+                                ptr.constBeautifulString()?.let {
+                                    possibleStrings.add(it)
+                                }
+                            } else {
+                                // 如果是object 找到其callSite
+                                val objs = this.ctx.pointerToObjectSet[ptr]
+                                objs?.forEach { obj ->
+                                    val unit = obj.getUnitFromWhere()
+                                    if (unit is JAssignStmt){
+                                        val invokeExpr = unit.rightOp
+                                        System.out.println("invokeExpr" + invokeExpr)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    //只能处理1个intent
+                    var newEntry : SootMethod? = null
+                    for (ps in possibleStrings){
+                        val sc = Scene.v().getSootClassUnsafe(ps, false)
+                        newEntry = AndroidUtils.compoEntryMap[sc]
+                        if (newEntry != null)
+                            break
+                    }
+                    // 开始跨组件分析
+                    newEntry?.let {
+                        analyzeMethod(newEntry, null, 0, local)
+                    }
+                    break //跨组件结束
+                }
+            } //寻找Intent 结束
+        }
+
         for (typeObj in typeObjs2) {
             val callee = dispatchInstanceCall(invokeExpr, typeObj) ?: continue
             handleInstanceInvoke(
-                stmt, callee, baseType, basePtr, caller, callSite, recvPtr, invokeExpr, line, curTraceDepth
+                stmt, callee, baseType, basePtr, caller, callSite, recvPtr, invokeExpr, line, curTraceDepth, isCalledComponent = isCalledComponent
             )
         }
         return basePtr
@@ -425,7 +530,7 @@ class TwoStagePointerAnalyze(
 
     // a.f(a,b,c)
     // a.b=c
-    //c =a.b
+    // c =a.b
     private fun addToFixPointAlgoCache(basePtr: PLLocalPointer, method: SootMethod, stmt: Stmt) {
         if (!ctx.pointerToObjectSet.containsKey(basePtr)) {
             return
@@ -630,6 +735,7 @@ class TwoStagePointerAnalyze(
         line: Int,
         curTraceDepth: Int,
         processNewMethod: Boolean = true,
+        isCalledComponent: PLLocalPointer?
     ) {
         if (!canContinueAnalyze()) {
             return
@@ -648,7 +754,7 @@ class TwoStagePointerAnalyze(
                     patchMethod(stmt, caller, callee, basePtr, recvPtr, line)
                     patchedMethods.add(callee)
                 } else {
-                    val isReachedMax = analyzeMethod(callee, recvPtr, curTraceDepth)
+                    val isReachedMax = analyzeMethod(callee, recvPtr, curTraceDepth, isCalledComponent)
                     if (isReachedMax) {
                         removeRM(callee)
                     }
@@ -702,10 +808,10 @@ class TwoStagePointerAnalyze(
         caller: SootMethod,
         stmt: Stmt,
         basePtr: PLLocalPointer,
-        typeObjs: Set<PLObject>
+        typeObjs: Set<PLObject>,
     ) {
         if (stmt.containsInvokeExpr()) {
-            instanceInvokeWithObjs(caller, stmt, basePtr, typeObjs)
+            instanceInvokeWithObjs(caller, stmt, basePtr, typeObjs, null)
         } else if (stmt is JAssignStmt) {
             val leftOp = stmt.leftOp
             val rightOp = stmt.rightOp
@@ -721,7 +827,7 @@ class TwoStagePointerAnalyze(
     }
 
     private suspend fun instanceInvokeWithObjs(
-        caller: SootMethod, stmt: Stmt, basePtr: PLLocalPointer, typeObjs: Set<PLObject>
+        caller: SootMethod, stmt: Stmt, basePtr: PLLocalPointer, typeObjs: Set<PLObject>, isCalledComponent: PLLocalPointer?
     ): PLLocalPointer {
         var recvPtr: PLLocalPointer? = null
         val invokeExpr: InstanceInvokeExpr
@@ -752,7 +858,8 @@ class TwoStagePointerAnalyze(
                     invokeExpr,
                     stmt.javaSourceStartLineNumber,
                     curTraceDepth,
-                    false
+                    false,
+                    isCalledComponent
                 )
             }
         }

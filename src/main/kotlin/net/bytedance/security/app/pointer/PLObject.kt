@@ -20,6 +20,7 @@ package net.bytedance.security.app.pointer
 import net.bytedance.security.app.taintflow.TwoStagePointerAnalyze
 
 import net.bytedance.security.app.util.profiler
+import soot.Unit // 确保导入的是 soot.Unit，而不是 kotlin.Unit
 import soot.SootField
 import soot.SootMethod
 import soot.Type
@@ -64,6 +65,27 @@ class PLObject(var classType: Type, private val where: Any, private val site: In
             }
         }
         return "obj{$sig:$site=>${classType}}"
+    }
+
+
+    fun getUnitFromWhere(): Unit? {
+        val n = site - 1 //site 是从1开始的
+        return when (where) {
+            is SootMethod -> {
+                // 如果是 SootMethod，则尝试获取 activeBody.units 的第 n 个元素
+                val units = where.activeBody.units
+                if (n < 0 || n >= units.size) {
+                    throw IndexOutOfBoundsException("Index: $n, Size: ${units.size}")
+                }
+                units.elementAtOrNull(n)
+            }
+            is SootField -> {
+                null
+            }
+            else -> {
+                throw IllegalArgumentException("Unknown type for 'where': ${where::class}")
+            }
+        }
     }
 
     companion object {
