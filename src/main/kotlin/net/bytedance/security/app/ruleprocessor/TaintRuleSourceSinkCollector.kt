@@ -42,6 +42,7 @@ class TaintRuleSourceSinkCollector(
 
     val parameterSources = HashSet<PLLocalPointer>()
     val source = rule.source!!
+    val sourceFilter = rule.sourceFilter
     val sink: Map<String, SinkBody> = rule.sink
 
     //key is entry method
@@ -56,6 +57,14 @@ class TaintRuleSourceSinkCollector(
     fun collectSourceSinks() {
         processSource()
         processSink()
+        filterSource()
+    }
+
+    private fun filterSource(){
+        if ( sourceFilter != null)
+            analyzerData.sourcePointerSet = analyzerData.sourcePointerSet.filterNot { pointer ->
+                sourceFilter.any { filter -> pointer.toString().contains(filter) }
+            }.toMutableSet()
     }
 
     private fun processSink() {

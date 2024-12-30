@@ -79,6 +79,7 @@ data class RuleData(
     var activeWhen: List<String>? = null,
     var noActiveWhen: List<String>? = null,
     val source: SourceBody? = null,
+    val sourceFilter: List<String>? = null,
     val sinkRuleObj: List<RuleObjBody>? = null,
     val sourceRuleObj: List<RuleObjBody>? = null,
     val throughAPI: ThroughAPI? = null,

@@ -7,7 +7,7 @@
     "desc": {
       "name": "IntentRedirectionPlusVersion",
       "category": "IntentRedirection",
-      "detail": "Intent redirection, but a plus version",
+      "detail": "Intent redirection, but a plus version, also support inter-component analysis",
       "wiki": "",
       "possibility": "2",
       "model": "high"
@@ -20,6 +20,7 @@
         "<android.app.Activity: android.content.Intent getIntent()>"
       ]
     },
+    "sourceFilter": ["<com.cxxsheng.TramplineActivity: "],
     "TaintTweak": {
       "MethodSignature": {
         "<android.content.Intent: void <init>(*)>": {

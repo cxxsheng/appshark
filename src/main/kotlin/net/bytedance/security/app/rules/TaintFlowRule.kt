@@ -26,7 +26,7 @@ abstract class TaintFlowRule(name: String, ruleData: RuleData) : AbstractRule(na
     var sink: Map<String, SinkBody>
     val sanitize: Map<String, LinkedHashMap<String, JsonElement>>?
     var source: SourceBody?
-
+    var sourceFilter: List<String>?
     val polymorphismBackTrace: Boolean
 
     var primTypeAsTaint: Boolean
@@ -40,6 +40,7 @@ abstract class TaintFlowRule(name: String, ruleData: RuleData) : AbstractRule(na
         sink = ruleData.sink ?: emptyMap()
         sanitize = ruleData.sanitize
         source = ruleData.source
+        sourceFilter = ruleData.sourceFilter
         polymorphismBackTrace = ruleData.PolymorphismBackTrace == true
         primTypeAsTaint = ruleData.PrimTypeAsTaint == true
         taintTweak = ruleData.TaintTweak

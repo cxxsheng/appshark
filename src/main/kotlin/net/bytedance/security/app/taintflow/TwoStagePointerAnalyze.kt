@@ -412,7 +412,6 @@ class TwoStagePointerAnalyze(
         // 如果是isCalledComponent，代表的是被调用的组件，面对getIntent需要增加一些边的问题
         if (isCalledComponent != null){
 
-            System.out.println("didi" + caller.toString())
 
             if (invokeExpr.method.subSignature.contains("getIntent")){
                 System.out.println(invokeExpr)

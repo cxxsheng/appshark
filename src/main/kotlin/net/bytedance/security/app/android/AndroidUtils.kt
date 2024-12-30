@@ -297,8 +297,8 @@ object AndroidUtils {
         Log.logDebug("Load resource")
         resources = ARSCFileParser()
         try {
-            resources!!.parse(targetAPK.absolutePath)
-        } catch (e: IOException) {
+            resources!!.parse(File(targetAPK.absolutePath))
+        } catch (e: Exception) {
             e.printStackTrace()
         }
         Log.logDebug("Load manifest")
@@ -346,7 +346,7 @@ object AndroidUtils {
         TargetSdk = manifest.targetSdkVersion
         Log.logDebug("TargetSdk $TargetSdk")
         layoutFileParser = LayoutFileParser(manifest.packageName, resources)
-        layoutFileParser!!.parseLayoutFileDirect(apkPath)
+        layoutFileParser!!.parseLayoutFileDirect(File(apkPath))
         parseAllComponents(manifest)
         this.manifestVulnerability?.check(manifest)
 

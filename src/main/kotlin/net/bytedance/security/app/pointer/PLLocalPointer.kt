@@ -28,7 +28,8 @@ import soot.jimple.Constant
 /**
  * to save memory
  */
-const val shortNameEnable = true
+const val shortNameEnable = false
+
 
 /**
  * Pointer to variables and constants generated during analysis
@@ -146,21 +147,21 @@ class PLLocalPointer : PLPointer {
 
 fun SootMethod.shortSignature(): String {
     if (shortNameEnable) {
-        return "${this.declaringClass.shortName}:${this.name}.${this.number}"
+        return "${this.declaringClass.shortName}:${this.name}"
     }
     return this.signature
 }
 
 fun SootField.shortSignature(): String {
     if (shortNameEnable) {
-        return "${this.declaringClass.shortName}:${this.name}.${this.number}"
+        return "${this.declaringClass.shortName}:${this.name}"
     }
     return this.signature
 }
 
 fun Type.shortName(): String {
     if (shortNameEnable) {
-        return this.toString().split(".").last() + this.number.toString()
+        return this.toString().split(".").last()
     }
     return this.toString()
 }
