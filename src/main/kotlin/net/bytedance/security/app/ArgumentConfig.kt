@@ -83,7 +83,7 @@ class ArgumentConfig(
                 rules = "",
                 javaSource = false,
                 maxPointerAnalyzeTime = 600,
-                maxThread = 4,
+                maxThread = 200,
                 manifestTrace = 3,
                 callBackEnhance = true,
                 doWholeProcessMode = false,
