@@ -13,7 +13,8 @@
       "model": "high"
     },
     "entry": {
-      "ExportedCompos": true
+//      "ExportedCompos": true
+      "methods": ["<CustomClass: void Main_Entry_com_android_settings_notification_app_ChannelPanelActivity()>"]
     },
     "source": {
       "Return": [
@@ -72,7 +73,18 @@
               "@this"
             ]
           }
+        },
+        "<android.content.Intent: * replaceExtras(*)>" : {
+          "params->@this.data": {
+            "I": [
+              "p*"
+            ],
+            "O": [
+              "@this.data"
+            ]
+          }
         }
+
       },
       "MethodName": {
         "putCharSequenceArrayListExtra": {}

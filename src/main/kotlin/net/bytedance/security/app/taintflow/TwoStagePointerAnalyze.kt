@@ -410,14 +410,14 @@ class TwoStagePointerAnalyze(
         }
 
         // 如果是isCalledComponent，代表的是被调用的组件，面对getIntent需要增加一些边的问题
-        if (isCalledComponent != null){
-
-
-            if (invokeExpr.method.subSignature.contains("getIntent")){
-                System.out.println(invokeExpr)
-            }
-
-        }
+//        if (isCalledComponent != null){
+//
+//
+//            if (invokeExpr.method.subSignature.contains("getIntent")){
+//                System.out.println(invokeExpr)
+//            }
+//
+//        }
 
         val mode = methodAnalyzeMode.methodMode(invokeExpr.method)
         if (mode == MethodAnalyzeMode.Skip) {
@@ -495,7 +495,7 @@ class TwoStagePointerAnalyze(
                                     val unit = obj.getUnitFromWhere()
                                     if (unit is JAssignStmt){
                                         val invokeExpr = unit.rightOp
-                                        System.out.println("invokeExpr" + invokeExpr)
+//                                        System.out.println("invokeExpr" + invokeExpr)
                                     }
                                 }
                             }
@@ -511,7 +511,11 @@ class TwoStagePointerAnalyze(
                     }
                     // 开始跨组件分析
                     newEntry?.let {
-                        analyzeMethod(newEntry, null, 0, local)
+                        //不要有多次ipc 会让其不准确
+                        if (isCalledComponent == null) {
+                            println("ICC Analysis started: from ${caller}.${invokeExpr} to ${newEntry}")
+                            analyzeMethod(newEntry, null, 0, local)
+                        }
                     }
                     break //跨组件结束
                 }
