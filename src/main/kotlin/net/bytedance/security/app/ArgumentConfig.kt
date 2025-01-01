@@ -63,6 +63,7 @@ class ArgumentConfig(
     var skipPointerPropagationForLibraryMethod: Boolean = true, //skip pointer propagation for library methods,if skip may lead to false negatives.
     //if exists, use it to replace Package in EngineConfig.json5
     var libraryPackage: List<String>? = null,
+    @SerialName("checkPermission")
     var checkPermission: Boolean = true
 ) {
     fun getMaxPreprocessorThread(): Int {

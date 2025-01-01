@@ -586,9 +586,9 @@ object AndroidUtils {
         val aXmlNode = c.aXmlNode
         val xmlInfo = ComponentDescription()
         var isExportedCompo = c.isExported
-//        if (aXmlNode.toString().contains("DeepLinkHomepageActivity")){
-//            println()
-//        }
+        if (aXmlNode.toString().contains("DeepLinkHomepageActivity")){
+            println()
+        }
         if (c.isEnabled) {
             val childNodes = aXmlNode.getChildrenWithTag("intent-filter")
             //refer https://developer.android.com/guide/topics/manifest/activity-element#exported
