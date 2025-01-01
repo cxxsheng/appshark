@@ -299,6 +299,8 @@ class TaintPathFinder(
         // fixme 是否需要做类型检查呢吗 用于针对intent的测试
         if (rule.PreciseTaint) {
             val fields = analyzeContext.findObjectFieldsByPointer(srcPtr)
+//            if (fields.isNotEmpty())
+//                println("hello ${srcPtr} -->> {${fields.toSortedSet()}")
             for (field in fields) {
                 var sets = g[srcPtr]
                 if (sets == null) {

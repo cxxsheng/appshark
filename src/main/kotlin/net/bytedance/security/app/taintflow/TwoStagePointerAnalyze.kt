@@ -501,7 +501,7 @@ class TwoStagePointerAnalyze(
                             }
                         }
                     }
-                    //只能处理1个intent
+                    // 只能处理1个intent
                     var newEntry : SootMethod? = null
                     for (ps in possibleStrings){
                         val sc = Scene.v().getSootClassUnsafe(ps, false)
@@ -511,15 +511,15 @@ class TwoStagePointerAnalyze(
                     }
                     // 开始跨组件分析
                     newEntry?.let {
-                        //不要有多次ipc 会让其不准确
+                        // 不要有多次ipc 会让其不准确
                         if (isCalledComponent == null) {
                             println("ICC Analysis started: from ${caller}.${invokeExpr} to ${newEntry}")
                             analyzeMethod(newEntry, null, 0, local)
                         }
                     }
-                    break //跨组件结束
+                    break // 跨组件结束
                 }
-            } //寻找Intent 结束
+            } // 寻找Intent 结束
         }
 
         for (typeObj in typeObjs2) {

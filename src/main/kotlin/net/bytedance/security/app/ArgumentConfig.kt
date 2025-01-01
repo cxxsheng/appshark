@@ -22,7 +22,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class ArgumentConfig(
-    @SerialName("CallBackEnhance")
+    @SerialName("")
     var callBackEnhance: Boolean = false,
     @SerialName("ManifestTrace")
     var manifestTrace: Int = 3,
@@ -63,6 +63,7 @@ class ArgumentConfig(
     var skipPointerPropagationForLibraryMethod: Boolean = true, //skip pointer propagation for library methods,if skip may lead to false negatives.
     //if exists, use it to replace Package in EngineConfig.json5
     var libraryPackage: List<String>? = null,
+    var checkPermission: Boolean = true
 ) {
     fun getMaxPreprocessorThread(): Int {
         return this.maxThread ?: this.maxPreprocessorThread
@@ -91,6 +92,7 @@ class ArgumentConfig(
                 logLevel = 1,
                 configPath = "$wd/config",
                 rulePath = "$wd/config/rules",
+                checkPermission = false
             )
         }
 
