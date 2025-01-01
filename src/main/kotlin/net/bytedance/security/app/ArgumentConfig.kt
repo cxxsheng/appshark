@@ -22,7 +22,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class ArgumentConfig(
-    @SerialName("")
+    @SerialName("CallBackEnhance")
     var callBackEnhance: Boolean = false,
     @SerialName("ManifestTrace")
     var manifestTrace: Int = 3,
