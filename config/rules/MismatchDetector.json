@@ -2,21 +2,86 @@
   "IntentRedirectionBabyVersion": {
     "enable": true,
     "SliceMode": true,
+    "PreciseTaint": true,
     "traceDepth": 6,
     "desc": {
-      "name": "IntentRedirectionBabyVersion",
-      "category": "IntentRedirection",
-      "detail": "Intent redirection, but a very basic version",
+      "name": "MismatchDetector",
+      "category": "MismatchDetector",
+      "detail": "MismatchDetector",
       "wiki": "",
       "possibility": "2",
       "model": "high"
     },
     "entry": {},
     "source": {
-      "Return": [
-        "<android.content.Intent: android.os.Parcelable getParcelable*(java.lang.String)>",
-        "<android.os.Bundle: android.os.Parcelable getParcelable*(java.lang.String)>"
+        "Return": [
+          "<android.app.Activity: android.content.Intent getIntent()>"
       ]
+    },
+    "TaintTweak": {
+      "MethodSignature": {
+        "<android.content.Intent: void <init>(*)>": {
+          "params->@this": {
+            "I": [
+              "p*"
+            ],
+            "O": [
+              "@this"
+            ]
+          }
+        },
+        "<android.content.Intent: void put*(*)>": {
+          "params->@this.data": {
+            "I": [
+              "p*"
+            ],
+            "O": [
+              "@this.data"
+            ]
+          }
+        },
+        "<android.content.Intent: * get*(*)>": {
+          "@this.data->ret": {
+            "I": [
+              "@this.data"
+            ],
+            "O": [
+              "ret"
+            ]
+          }
+        },
+        "<android.content.Intent: * create*(*)>": {
+          "@this.data->ret": {
+            "I": [
+              "@this.data"
+            ],
+            "O": [
+              "ret"
+            ]
+          }
+        },
+        "<android.content.Intent: * set*(*)>": {
+          "params->@this": {
+            "I": [
+              "p*"
+            ],
+            "O": [
+              "@this"
+            ]
+          }
+        },
+        "<android.content.Intent: * replaceExtras(*)>" : {
+          "params->@this.data": {
+            "I": [
+              "p*"
+            ],
+            "O": [
+              "@this.data"
+            ]
+          }
+        }
+
+      }
     },
     "sink": {
       "<*: * startActivit*(*)>": {

@@ -13,8 +13,8 @@
       "model": "high"
     },
     "entry": {
-      "ExportedCompos": true
-//      "methods": ["<CustomClass: void Main_Entry_com_android_settings_notification_app_ChannelPanelActivity()>"]
+//      "ExportedCompos": true
+      "methods": ["<CustomClass: void Main_Entry_com_android_settings_homepage_DeepLinkHomepageActivity()>"]
     },
     "source": {
       "Return": [
@@ -85,9 +85,6 @@
           }
         }
 
-      },
-      "MethodName": {
-        "putCharSequenceArrayListExtra": {}
       }
     },
     "sink": {

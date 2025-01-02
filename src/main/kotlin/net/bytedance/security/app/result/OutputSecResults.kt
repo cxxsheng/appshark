@@ -143,13 +143,11 @@ object OutputSecResults {
      */
     private fun removeDup(): List<SecurityVulnerabilityItem> {
         val map = HashMap<String, SecurityVulnerabilityItem>()
-        println("before Dup of ${vulnerabilityItems.size}")
         for (vulnerabilityItem in this.vulnerabilityItems) {
             val item = vulnerabilityItem.toSecurityVulnerabilityItem()
             val hash = item.hash!!
             map[hash] = item
         }
-        println("after Dup of ${map.size}")
         return map.values.toList()
     }
 
@@ -218,7 +216,6 @@ object OutputSecResults {
 
     @Synchronized
     fun addOneVulnerability(vulnerabilityItem: VulnerabilityItem) {
-       // println("addOneVulnerability ${vulnerabilityItems.size}")
         this.vulnerabilityItems.add(vulnerabilityItem)
     }
 
