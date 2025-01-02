@@ -64,7 +64,9 @@ class ArgumentConfig(
     //if exists, use it to replace Package in EngineConfig.json5
     var libraryPackage: List<String>? = null,
     @SerialName("checkPermission")
-    var checkPermission: Boolean = true
+    var checkPermission: Boolean = true,
+    @SerialName("isSupportICC")
+    var isSupportICC: Boolean  = false
 ) {
     fun getMaxPreprocessorThread(): Int {
         return this.maxThread ?: this.maxPreprocessorThread
@@ -93,7 +95,8 @@ class ArgumentConfig(
                 logLevel = 1,
                 configPath = "$wd/config",
                 rulePath = "$wd/config/rules",
-                checkPermission = false
+                checkPermission = true,
+                isSupportICC = false
             )
         }
 

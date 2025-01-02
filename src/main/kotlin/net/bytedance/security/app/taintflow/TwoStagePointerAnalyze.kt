@@ -22,6 +22,7 @@ import net.bytedance.security.app.Log
 import net.bytedance.security.app.PLUtils
 import net.bytedance.security.app.android.AndroidUtils
 import net.bytedance.security.app.engineconfig.isLibraryClass
+import net.bytedance.security.app.getConfig
 import net.bytedance.security.app.pathfinder.variableName
 import net.bytedance.security.app.pointer.PLLocalPointer
 import net.bytedance.security.app.pointer.PLObject
@@ -472,7 +473,7 @@ class TwoStagePointerAnalyze(
             typeObjs2 = makeNewObj(baseType, invokeExpr, basePtr)
         }
 
-        if (invokeExpr.method.subSignature in ICC_METHODS){
+        if (getConfig().isSupportICC && invokeExpr.method.subSignature in ICC_METHODS){
             var local:PLLocalPointer? = null
             val possibleStrings: MutableSet<String> = mutableSetOf()
             for (arg in invokeExpr.args){
