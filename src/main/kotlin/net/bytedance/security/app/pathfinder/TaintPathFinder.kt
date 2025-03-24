@@ -298,6 +298,7 @@ class TaintPathFinder(
         // 对于src应该指向的不仅仅是@this，还应该指向@this.data
         // fixme 是否需要做类型检查呢吗 用于针对intent的测试
         if (rule.PreciseTaint) {
+            // 从 entry 进来的还需要进行this.data的 taint
             val fields = analyzeContext.findObjectFieldsByPointer(srcPtr)
 //            if (fields.isNotEmpty())
 //                println("hello ${srcPtr} -->> {${fields.toSortedSet()}")
@@ -310,6 +311,7 @@ class TaintPathFinder(
                 if (!sets.contains(field))
                     sets.add(field)
             }
+
         }
         val path = bfsSearch(srcPtr, sinkPtrSet, g, getConfig().maxPathLength, rule.name, rule.primTypeAsTaint) ?: return
         val result = PathResult(path)

@@ -1,0 +1,35 @@
+{
+  "ParcelMismatchInSystemServer": {
+    "enable": true,
+    "DirectMode": true,
+    "traceDepth": 12,
+    "PreciseTaint": false,
+    "desc": {
+      "name": "ParcelMismatch",
+      "category": "ParcelMismatch",
+      "detail": "ParcelMismatch in System Server",
+      "wiki": "",
+      "possibility": "2",
+      "model": "high"
+    },
+    "entry": {
+      "methods": [
+        "<com.android.server.notification.NotificationManagerService$12: void enqueueNotificationWithTag(java.lang.String,java.lang.String,java.lang.String,int,android.app.Notification,int)>"
+      ]
+    },
+    "source": {
+      "Param": {
+        "<com.android.server.notification.NotificationManagerService$12: void enqueueNotificationWithTag(java.lang.String,java.lang.String,java.lang.String,int,android.app.Notification,int)>": [
+          "p4"
+        ]
+      }
+    },
+    "sink": {
+      "<*: * notifyListenersPostedAndLogLocked(*)>": {
+        "TaintCheck": [
+          "p*"
+        ]
+      }
+    }
+  }
+}

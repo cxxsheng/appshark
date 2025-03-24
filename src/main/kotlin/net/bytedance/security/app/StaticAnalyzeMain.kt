@@ -49,8 +49,16 @@ object StaticAnalyzeMain {
         logInfo("soot init done")
         PLUtils.createCustomClass()
         profiler.parseApk.start()
-        parseApk(apkPath, jadxPath, argumentConfig.outPath, apkNameTool)
+        if (!apkPath.endsWith(".jar"))
+            parseApk(apkPath, jadxPath, argumentConfig.outPath, apkNameTool)
+        else
+            logInfo("skip parse apk")
         logInfo("apk parse done")
+
+        getConfig().miniSdkForcing?.let { AndroidUtils.MinSdk = it }
+        getConfig().targetSdkForcing?.let { AndroidUtils.TargetSdk = it }
+
+
         profiler.parseApk.end()
 
         profiler.preProcessor.start()

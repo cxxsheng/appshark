@@ -256,7 +256,11 @@ class StmtTransfer(val ctx: AnalyzeContext, private val pt: PointerFactory, priv
             // o.c -> a
             // o.c flow to a
             val rightPtr: PLPointer = pt.allocObjectField(obj, sootField.name, sootField.type, sootField)
-
+//            if (ctx.pointerToObjectSet[rightPtr] == null) {
+//                //最好在这里创建一个object，这样就不会重复创建无用的object了
+//                //fixme
+//                tsp.makeNewObj(rightPtr.ptrType, rightOp, rightPtr)
+//            }
             ctx.addPtrEdge(rightPtr, leftPtr)
 
             /*

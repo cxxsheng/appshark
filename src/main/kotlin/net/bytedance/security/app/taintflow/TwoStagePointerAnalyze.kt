@@ -556,6 +556,34 @@ class TwoStagePointerAnalyze(
     }
 
     fun makeNewObj(type: Type, v: Value, ptr: PLPointer): Set<PLObject> {
+
+            // 1. 通过反向流图找到变量的来源
+        val variable = ctx.reverseVariableFlowGraph[ptr]
+
+        // 2. 检查是否已有相同来源的对象
+        variable?.let { src ->
+            // 如果是方法调用，查找接收者对象(this)的指向
+            when(v) {
+                is InvokeExpr -> {
+                    val base = (v as InstanceInvokeExpr).base
+                    val baseType = base.type
+                    // 查找是否已存在相同类型和来源的对象
+                    val existingObjs = ctx.pointerToObjectSet.entries
+                        .filter { (pointer, objects) ->
+                            objects.any { it.classType == baseType }
+                        }
+                        .flatMap { it.value }
+                        .toSet()
+
+                    if (existingObjs.isNotEmpty()) {
+                        existingObjs.forEach { obj ->
+                            ctx.addObjToPTS(ptr, obj)
+                        }
+                        return existingObjs
+                    }
+                }
+            }
+        }
         val newObj = pt.allocObject(type, getPseudoEntryMethod(), v, pseudoObjectOrFieldIndex++)
         val objs = setOf(newObj)
         ctx.addObjToPTS(ptr, newObj)

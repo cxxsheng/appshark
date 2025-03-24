@@ -60,11 +60,16 @@ class ArgumentConfig(
     var doWholeProcessMode: Boolean = false,
     var maxPathLength: Int = 32, // max taint flow path
     var skipAnalyzeNonRelatedMethods: Boolean = false, // skip analyze non-related methods with source and sinks ,if skip may lead to false negatives.
-    var skipPointerPropagationForLibraryMethod: Boolean = true, //skip pointer propagation for library methods,if skip may lead to false negatives.
+    var skipPointerPropagationForLibraryMethod: Boolean = false, //skip pointer propagation for library methods,if skip may lead to false negatives.
     //if exists, use it to replace Package in EngineConfig.json5
     var libraryPackage: List<String>? = null,
     @SerialName("checkPermission")
-    var checkPermission: Boolean = true
+    var checkPermission: Boolean = true,
+
+
+    var miniSdkForcing: Int? = null,
+    var targetSdkForcing: Int? = null,
+
 ) {
     fun getMaxPreprocessorThread(): Int {
         return this.maxThread ?: this.maxPreprocessorThread
