@@ -129,7 +129,8 @@ data class RuleData(
     val targetSdk: String = "",     // 规则适用的targetSdk版本
     val runtimeSdk: String = "",    // 规则适用的运行时系统版本
 
-    val PreciseTaint: Boolean? = null // 是否启用更加精确的taint，区分开@this和@this.data
+    val PreciseTaint: Boolean? = null, // 是否启用更加精确的taint，区分开@this和@this.data
+    val mustTainted: Map<String, SinkBody>? = null //也需要经过这个taint
 )
 
 val defaultSourceReturn = SourceReturn()

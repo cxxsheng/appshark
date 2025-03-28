@@ -197,7 +197,7 @@ class TaintPathFinder(
         srcPtr: PLLocalPointer,
         sinkPtrSet: Set<PLLocalPointer>,
     ) {
-        calcPath(srcPtr, sinkPtrSet)
+        calcPath(srcPtr, sinkPtrSet, false)
     }
 
     /**
@@ -220,7 +220,8 @@ class TaintPathFinder(
     private suspend fun runTaintAnalyze(analyzer: TaintAnalyzer) {
         calcPathFromSourceTaint(
             analyzer.sourcePtrSet,
-            analyzer.sinkPtrSet
+            analyzer.sinkPtrSet,
+            analyzer.mustPassedPtrSet,
         )
 
     }
@@ -234,6 +235,7 @@ class TaintPathFinder(
     private suspend fun calcPathFromSourceTaint(
         sourcePtrSet: Set<PLLocalPointer>,
         sinkPtrSet: Set<PLLocalPointer>,
+        mustPassedPtrSet : Set<PLLocalPointer>?,
     ) {
         for (sourcePtr in sourcePtrSet) {
             if (checkSanitizeRules(sourcePtr)) {
@@ -245,11 +247,27 @@ class TaintPathFinder(
                 "calcPathFromSourceTaint ${this.analyzer.entryMethod.signature}-${sourcePtr.signature()}",
                 3000
             ) {
-                calcPath(
-                    sourcePtr,
-                    sinkPtrSet,
-                )
+
+                //查看是否需要进行第一步路径计算，mustPassedPtrSet为null说明规则为空
+                var shouldPass = true
+                mustPassedPtrSet?.let {
+                    shouldPass = calcPath(
+                        sourcePtr,
+                        mustPassedPtrSet,
+                        true
+                    )
+
+                    if (shouldPass)
+                        Log.logInfo("Found mustPassedPtrSet $it, start second round calcPath")
+                    else
+                        Log.logInfo("Cannot Find mustPassedPtrSet $it, end calcPath")
+
+                }
+                if (shouldPass){
+                    calcPath(sourcePtr, sinkPtrSet, false)
+                }
             }
+
         }
     }
 
@@ -259,11 +277,13 @@ class TaintPathFinder(
 
     /**
      * Try to find the shortest path from srcPtr to sinkPtrSet
+     * return true if found Path
      */
     private suspend fun calcPath(
         srcPtr: PLPointer,
         sinkPtrSet: Set<PLLocalPointer>,
-    ) {
+        isInternalUse: Boolean
+    ): Boolean {
         if (isThisSolverNeedLog()) {
             val sb = StringBuilder()
             val sinkTaintedSet = HashSet<PLPointer>()
@@ -313,13 +333,21 @@ class TaintPathFinder(
             }
 
         }
-        val path = bfsSearch(srcPtr, sinkPtrSet, g, getConfig().maxPathLength, rule.name, rule.primTypeAsTaint) ?: return
-        val result = PathResult(path)
-        try {
-            TaintPathModeHtmlWriter(OutputSecResults, analyzer, result, rule).addVulnerabilityAndSaveResultToOutput()
-        } catch (ex: Exception) {
-            ex.printStackTrace()
+        val path = bfsSearch(srcPtr, sinkPtrSet, g, getConfig().maxPathLength, rule.name, rule.primTypeAsTaint) ?: return false
+        if (!isInternalUse) {
+            val result = PathResult(path)
+            try {
+                TaintPathModeHtmlWriter(
+                    OutputSecResults,
+                    analyzer,
+                    result,
+                    rule
+                ).addVulnerabilityAndSaveResultToOutput()
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
         }
+        return true
     }
 
 

@@ -31,6 +31,8 @@ TaintAnalyzerData represents  the parsed  source and sink in Rule.
 class TaintAnalyzerData {
 
 
+    var mustPassedPtrSet:MutableSet<PLLocalPointer> ? = null
+
     /**
      *key is the PLLocalPointer's name, value is the PLLocalPointer.
      * it contains all sources and sinks
@@ -69,18 +71,37 @@ class TaintAnalyzerData {
         return ptr
     }
 
+    fun initMustPassedPtrSet(){
+        mustPassedPtrSet = HashSet();
+    }
+
+    private fun allocMustPassedPtrSet(method: SootMethod, localName: String, origType: Type): PLLocalPointer {
+        val ptr = allocPtr(method, localName, origType)
+        mustPassedPtrSet!!.add(ptr)
+        return ptr
+    }
+
+    enum class PointerType {
+        SOURCE,
+        SINK,
+        MUST_PASSED
+    }
+
 
     fun allocPtrWithStmt(
         stmt: Stmt,
         method: SootMethod,
         localName: String,
         origType: Type,
-        isSource: Boolean
+        pointerType: PointerType
     ): PLLocalPointer {
-        val ptr = if (isSource) allocSourcePtr(method, localName, origType)
-        else {
-            allocSinkPtr(method, localName, origType)
+
+        val ptr = when (pointerType) {
+            PointerType.SOURCE -> allocSourcePtr(method, localName, origType)
+            PointerType.SINK -> allocSinkPtr(method, localName, origType)
+            PointerType.MUST_PASSED -> allocMustPassedPtrSet(method, localName, origType)
         }
+
         if (!ptrStmtMapSrcSink.containsKey(ptr)) {
             ptrStmtMapSrcSink[ptr] = HashSet()
         }
@@ -99,6 +120,7 @@ class TaintAnalyzer {
     val thisDepth: Int
     val sinkPtrSet get() = this.data.sinkPointerSet
     val sourcePtrSet get() = this.data.sourcePointerSet
+    val mustPassedPtrSet get() = this.data.mustPassedPtrSet
 
     constructor(rule: TaintFlowRule, entryMethod: SootMethod) {
         this.rule = rule

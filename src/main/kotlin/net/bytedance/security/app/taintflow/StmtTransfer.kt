@@ -23,6 +23,7 @@ import net.bytedance.security.app.engineconfig.isLibraryClass
 import net.bytedance.security.app.pointer.PLLocalPointer
 import net.bytedance.security.app.pointer.PLPointer
 import net.bytedance.security.app.pointer.PointerFactory
+import soot.PrimType
 import soot.SootMethod
 import soot.UnknownType
 import soot.Value
@@ -43,7 +44,7 @@ class StmtTransfer(val ctx: AnalyzeContext, private val pt: PointerFactory, priv
      * @this -> l3
      *
      */
-    fun identityStmt(identityStmt: JIdentityStmt, method: SootMethod) {
+    fun identityStmt(identityStmt: JIdentityStmt, method: SootMethod, isEntry: Boolean, line: Int) {
         val leftOp = identityStmt.leftOp as JimpleLocal
         val leftPtr: PLPointer = pt.allocLocal(method, leftOp.name, leftOp.type)
         val rightOp = identityStmt.rightOp
@@ -52,7 +53,13 @@ class StmtTransfer(val ctx: AnalyzeContext, private val pt: PointerFactory, priv
             pt.allocLocal(method, PLUtils.THIS_FIELD, rightOp.getType())
         } else if (rightOp is ParameterRef) {
             // a := @parameter0: java.lang.String;
-            pt.allocLocal(method, PLUtils.PARAM + rightOp.index, rightOp.type)
+            val paramPtr = pt.allocLocal(method, PLUtils.PARAM + rightOp.index, rightOp.type)
+
+            if (isEntry && rightOp.type !is PrimType){
+                val rightObj = pt.allocObject(rightOp.type, method, rightOp, line, true)
+                ctx.addObjToPTS(leftPtr, rightObj)
+            }
+            paramPtr
         } else { // JCaughtExceptionRef
             val jCaughtExceptionRef = rightOp as JCaughtExceptionRef
             pt.allocLocal(method, jCaughtExceptionRef.toString(), jCaughtExceptionRef.type)
@@ -256,13 +263,12 @@ class StmtTransfer(val ctx: AnalyzeContext, private val pt: PointerFactory, priv
             // o.c -> a
             // o.c flow to a
             val rightPtr: PLPointer = pt.allocObjectField(obj, sootField.name, sootField.type, sootField)
-//            if (ctx.pointerToObjectSet[rightPtr] == null) {
-//                //最好在这里创建一个object，这样就不会重复创建无用的object了
-//                //fixme
-//                tsp.makeNewObj(rightPtr.ptrType, rightOp, rightPtr)
-//            }
             ctx.addPtrEdge(rightPtr, leftPtr)
 
+            if (obj.isEntryObj){
+                // 类型都不一定一样 传播了也没什么意义
+                ctx.addPtrEdge(rightBasePtr, leftPtr, false)
+            }
             /*
                 a=b.c ,
                the field that b.@data points to also needs to be merged, otherwise the taint will be lost.

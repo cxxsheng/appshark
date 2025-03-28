@@ -159,7 +159,7 @@ class TwoStagePointerAnalyze(
             }
         } else if (stmt is JIdentityStmt) {
             // l2 := @parameter1: int
-            st.identityStmt(stmt, method)
+            st.identityStmt(stmt, method, curTraceDepth == 1, line)
         } else if (stmt is JAssignStmt) {
             val leftExpr = stmt.leftOp
             when (val rightExpr = stmt.rightOp) {
@@ -556,8 +556,12 @@ class TwoStagePointerAnalyze(
     }
 
     fun makeNewObj(type: Type, v: Value, ptr: PLPointer): Set<PLObject> {
-
-            // 1. 通过反向流图找到变量的来源
+        // func(obj) => funcA(obj, ...); funcB(obj, ...);
+        // 解决这个问题 funcA(obj, ...)
+        //            funcB(obj, ...)
+        // 此时这里的obj是同一个变量
+        // obj 没有在任何地方初始化，却调用了obj.function, 此时会创建这个obj
+        // 1. 通过反向流图找到变量的来源
         val variable = ctx.reverseVariableFlowGraph[ptr]
 
         // 2. 检查是否已有相同来源的对象

@@ -23,6 +23,7 @@ import net.bytedance.security.app.*
 
 abstract class TaintFlowRule(name: String, ruleData: RuleData) : AbstractRule(name, ruleData) {
 
+    var mustTainted: Map<String, SinkBody>?
     var sink: Map<String, SinkBody>
     val sanitize: Map<String, LinkedHashMap<String, JsonElement>>?
     var source: SourceBody?
@@ -37,6 +38,7 @@ abstract class TaintFlowRule(name: String, ruleData: RuleData) : AbstractRule(na
     val PreciseTaint: Boolean
 
     init {
+        mustTainted = ruleData.mustTainted
         sink = ruleData.sink ?: emptyMap()
         sanitize = ruleData.sanitize
         source = ruleData.source

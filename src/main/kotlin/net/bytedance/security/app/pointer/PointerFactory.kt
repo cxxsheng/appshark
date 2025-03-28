@@ -38,7 +38,8 @@ class PointerFactory {
         clsType: Type,
         method: SootMethod,
         v: Value?,
-        site: Int
+        site: Int,
+        isEntry: Boolean = false
     ): PLObject {
         val classType = typeWrapper(clsType)
         val objSig = PLObject.getObjectSignature(classType, method, v, site)
@@ -46,7 +47,7 @@ class PointerFactory {
             return objIndexMap[objSig]!!
         }
 
-        val obj = PLObject(classType, method, site, objSig)
+        val obj = PLObject(classType, method, site, objSig, isEntry)
         objIndexMap[objSig] = obj
         return obj
     }
@@ -70,7 +71,7 @@ class PointerFactory {
             return objIndexMap[objSig]!!
         }
 
-        val obj = PLObject(classType, field, site, objSig)
+        val obj = PLObject(classType, field, site, objSig, false)
         objIndexMap[objSig] = obj
         return obj
     }

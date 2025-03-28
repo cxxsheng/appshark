@@ -30,7 +30,7 @@ import soot.Value
 /**
  * Corresponds to object in pointer analyze. For example, File file=new File()
  */
-class PLObject(var classType: Type, private val where: Any, private val site: Int, val signature: String) {
+class PLObject(var classType: Type, private val where: Any, private val site: Int, val signature: String, val isEntryObj:Boolean) {
     val isPseudoObj: Boolean
         get() = where is SootMethod && where == TwoStagePointerAnalyze.getPseudoEntryMethod()
 

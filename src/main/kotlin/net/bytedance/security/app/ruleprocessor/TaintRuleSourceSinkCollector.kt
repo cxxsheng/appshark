@@ -43,7 +43,9 @@ class TaintRuleSourceSinkCollector(
     val parameterSources = HashSet<PLLocalPointer>()
     val source = rule.source!!
     val sourceFilter = rule.sourceFilter
+
     val sink: Map<String, SinkBody> = rule.sink
+    val mustTainted: Map<String, SinkBody> ? = rule.mustTainted
 
     //key is entry method
     private val hasSourceReturn = HashMap<SootMethod, Boolean>()
@@ -56,9 +58,14 @@ class TaintRuleSourceSinkCollector(
 
     fun collectSourceSinks() {
         processSource()
-        processSink()
+        processSink(sink, TaintAnalyzerData.PointerType.SINK)
+        mustTainted?.let {
+            analyzerData.initMustPassedPtrSet()
+            processSink(mustTainted, TaintAnalyzerData.PointerType.MUST_PASSED)
+        }
         filterSource()
     }
+
 
     private fun filterSource(){
         if ( sourceFilter != null)
@@ -67,9 +74,9 @@ class TaintRuleSourceSinkCollector(
             }.toMutableSet()
     }
 
-    private fun processSink() {
+   private fun processSink(sink : Map<String, SinkBody>, type: TaintAnalyzerData.PointerType) {
         for ((sinkKey, sinkContentObj) in toSortedMap(sink)) {
-            val sinkMethodSet = MethodFinder.checkAndParseMethodSig(sinkKey)
+                    val sinkMethodSet = MethodFinder.checkAndParseMethodSig(sinkKey)
 
             if (sinkMethodSet.isEmpty()) {
                 continue
@@ -82,20 +89,22 @@ class TaintRuleSourceSinkCollector(
                 if (sinkCallSites.isEmpty()) {
                     continue
                 }
-                findSinkPointersForOneSinkRule(sinkContentObj, sinkCallSites)
+                findSinkPointersForOneSinkRule(sinkContentObj, sinkCallSites, type)
             }
         }
     }
 
     private fun findSinkPointersForOneSinkRule(
         sinkContentObj: SinkBody,
-        sinkCallSites: Set<CallSite>
+        sinkCallSites: Set<CallSite>,
+        type: TaintAnalyzerData.PointerType
     ) {
         for (callsite in sinkCallSites) {
             calcSinksAndParamCheck(
                 sinkContentObj,
                 setOf(callsite.stmt),
-                callsite.method
+                callsite.method,
+                type
             )
         }
     }
@@ -103,14 +112,16 @@ class TaintRuleSourceSinkCollector(
     private fun calcSinksAndParamCheck(
         sinkContentObj: SinkBody,
         sinkStmtSet: Set<Stmt>,
-        sinkMethodCaller: SootMethod
+        sinkMethodCaller: SootMethod,
+        type: TaintAnalyzerData.PointerType
     ) {
 
         for (sinkStmt in sinkStmtSet) {
             calcSinkPointers(
                 sinkStmt,
                 sinkContentObj,
-                sinkMethodCaller
+                sinkMethodCaller,
+                type
             )
 
         }
@@ -120,7 +131,8 @@ class TaintRuleSourceSinkCollector(
     private fun calcSinkPointers(
         stmt: Stmt,
         sink: SinkBody,
-        sinkMethodCaller: SootMethod
+        sinkMethodCaller: SootMethod,
+        type: TaintAnalyzerData.PointerType
     ): Set<PLLocalPointer> {
         if (sink.TaintCheck == null || sink.TaintCheck.isEmpty()) {
             Log.logErr("${this.rule.name} sink  TaintCheck is empty")
@@ -136,7 +148,7 @@ class TaintRuleSourceSinkCollector(
             if (tp.position == TaintPosition.This) {
                 if (invokeExpr is InstanceInvokeExpr) {
                     val base = invokeExpr.base
-                    val ptr = addPtrToEntry(stmt, base, sinkMethodCaller)
+                    val ptr = addPtrToEntry(stmt, base, sinkMethodCaller, type)
                     if (ptr != null) {
                         ptrSet.add(ptr)
                     }
@@ -146,7 +158,7 @@ class TaintRuleSourceSinkCollector(
                 if (stmt is JAssignStmt) {
                     val leftExpr = stmt.leftOp
                     if (leftExpr is JimpleLocal) {
-                        val ptr = addPtrToEntry(stmt, leftExpr, sinkMethodCaller)
+                        val ptr = addPtrToEntry(stmt, leftExpr, sinkMethodCaller, type)
                         if (ptr != null) {
                             ptrSet.add(ptr)
                         }
@@ -158,7 +170,7 @@ class TaintRuleSourceSinkCollector(
                     if (!isValidType(paramTypeArr, arg.type)) {
                         continue
                     }
-                    val ptr = addPtrToEntry(stmt, arg, sinkMethodCaller)
+                    val ptr = addPtrToEntry(stmt, arg, sinkMethodCaller, type)
                     if (ptr != null) {
                         ptrSet.add(ptr)
                     }
@@ -169,7 +181,7 @@ class TaintRuleSourceSinkCollector(
                     if (!isValidType(paramTypeArr, arg.type)) {
                         continue
                     }
-                    val ptr = addPtrToEntry(stmt, arg, sinkMethodCaller)
+                    val ptr = addPtrToEntry(stmt, arg, sinkMethodCaller, type)
                     if (ptr != null) {
                         ptrSet.add(ptr)
                     }
@@ -185,20 +197,21 @@ class TaintRuleSourceSinkCollector(
         stmt: Stmt,
         arg: Value,
         callerMethod: SootMethod,
+        type: TaintAnalyzerData.PointerType,
     ): PLLocalPointer? {
         if (arg is StringConstant) {
             return analyzerData.allocPtrWithStmt(
                 stmt,
                 callerMethod,
                 PLUtils.constStrSig(arg.value),
-                RefType.v("java.lang.String"), false
+                RefType.v("java.lang.String"), type
             )
         } else if (arg is JimpleLocal) {
             return analyzerData.allocPtrWithStmt(
                 stmt,
                 callerMethod,
                 arg.name,
-                arg.getType(), false
+                arg.getType(), type
             )
         }
         return null
@@ -380,7 +393,7 @@ class TaintRuleSourceSinkCollector(
     ) {
         if (callsite.stmt is JAssignStmt) {
             val local = callsite.stmt.leftOp as? JimpleLocal ?: return
-            analyzerData.allocPtrWithStmt(callsite.stmt, sourceMethod, local.name, local.type, true)
+            analyzerData.allocPtrWithStmt(callsite.stmt, sourceMethod, local.name, local.type, TaintAnalyzerData.PointerType.SOURCE)
         }
     }
 
@@ -401,7 +414,7 @@ class TaintRuleSourceSinkCollector(
                         callsite.stmt,
                         callsite.method,
                         PLUtils.constStrSig(constString),
-                        RefType.v("java.lang.String"), true
+                        RefType.v("java.lang.String"), TaintAnalyzerData.PointerType.SOURCE
                     )
                 }
             }

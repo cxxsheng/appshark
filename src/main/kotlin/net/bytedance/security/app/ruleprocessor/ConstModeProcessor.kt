@@ -28,6 +28,7 @@ import net.bytedance.security.app.rules.ConstStringModeRule
 import net.bytedance.security.app.rules.TaintFlowRule
 import net.bytedance.security.app.rules.TaintPosition
 import net.bytedance.security.app.taintflow.TaintAnalyzer
+import net.bytedance.security.app.taintflow.TaintAnalyzerData
 import net.bytedance.security.app.ui.ConstExtractModeHtmlWriter
 import soot.SootMethod
 import soot.Value
@@ -159,7 +160,7 @@ abstract class ConstModeProcessor(ctx: PreAnalyzeContext) : TaintFlowRuleProcess
         analyzer: TaintAnalyzer
     ) {
         if (arg is JimpleLocal) {
-            analyzer.data.allocPtrWithStmt(callerStmt, callerMethod, arg.name, arg.type, false)
+            analyzer.data.allocPtrWithStmt(callerStmt, callerMethod, arg.name, arg.type, TaintAnalyzerData.PointerType.SINK)
         } else if (arg is StringConstant && rule is ConstStringModeRule) {
             constStrArgMatch(rule, callerMethod, callerStmt, arg.value)
         } else if (arg is NumericConstant && rule is ConstNumberModeRule) {
