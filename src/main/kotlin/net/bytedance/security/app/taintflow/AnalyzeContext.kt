@@ -298,7 +298,8 @@ class AnalyzeContext(val pt: PointerFactory) {
 
     companion object {
         fun isPrimePtr(ptr: PLPointer): Boolean {
-            return ptr.ptrType is PrimType
+            return ptr.ptrType is PrimType || ptr.ptrType.toString().equals("java.lang.String")
         }
+
     }
 }

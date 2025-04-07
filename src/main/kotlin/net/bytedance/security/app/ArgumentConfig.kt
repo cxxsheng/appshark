@@ -34,7 +34,7 @@ class ArgumentConfig(
     /**
      * If you have OOM problems, try lowering this value, such as 1, to save memory
      */
-    var maxThread: Int? = null, //  Runtime.getRuntime().availableProcessors(),
+    var maxThread: Int? = Runtime.getRuntime().availableProcessors(), //  Runtime.getRuntime().availableProcessors(),
     /**
      * max preprocess thread, it's valid only if maxThread is null
      */
@@ -89,8 +89,8 @@ class ArgumentConfig(
                 outPath = "$wd/out",
                 rules = "",
                 javaSource = false,
-                maxPointerAnalyzeTime = 600,
-                maxThread = 200,
+                maxPointerAnalyzeTime = 4,
+                maxThread = 4,
                 manifestTrace = 3,
                 callBackEnhance = true,
                 doWholeProcessMode = false,

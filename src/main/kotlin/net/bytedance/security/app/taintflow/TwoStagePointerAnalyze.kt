@@ -193,7 +193,10 @@ class TwoStagePointerAnalyze(
                             // a = getIntent()
                             // b = startActivity -> param0
                             // a = b
-                            ctx.addPtrEdge(isCalledComponent, localRecvPtr)
+                            System.out.println("ICCgetintent$isCalledComponent -> $localRecvPtr")
+                            val tmpIpcRecvPtr = pt.allocLocal(method, "CxxshengIPC", recvOp.type)
+                            ctx.addPtrEdge(isCalledComponent, tmpIpcRecvPtr)
+                            ctx.addPtrEdge(tmpIpcRecvPtr, localRecvPtr)
                         }
                     }
 
